@@ -11,7 +11,6 @@
     <input id="chat-message-submit" type="button" value="Send">
     {{ room_name|json_script:"room-name" }}
 
-    <ol id="friends"></ol>
     <script>
         const roomName = JSON.parse(document.getElementById('room-name').textContent);
         console.log('ws://'+ window.location.host+ '/ws/chat/'+ roomName + '/')
@@ -26,7 +25,7 @@
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             document.querySelector('#chat-log').value += (data.message + '\n');
-            build_active_friend_list(data.friends)
+            console.log(data);
         };
 
         chatSocket.onclose = function(e) {
@@ -54,14 +53,6 @@
             messageInputDom.value = '';
         };
 
-        function build_active_friend_list(friend_list){
-            let list = document.getElementById("friends");
-            for (i = 0; i < friend_list.length; ++i) {
-                let li = document.createElement('li');
-                li.innerText = friend_list[i]['friend__username'];
-                list.appendChild(li);
-            }
-        }
     </script>
 </body>
 </html>
