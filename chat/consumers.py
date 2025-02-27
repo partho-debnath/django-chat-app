@@ -34,19 +34,19 @@ class ChatConsumer(WebsocketConsumer):
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
 
-        if text_data_json.get("type") == "online_friends":
-            async_to_sync(self.channel_layer.send)(
-                self.channel_name,
-                {
-                    "type": "online.friends",
-                    "message": "online fiends",
-                },
-            )
+        async_to_sync(self.channel_layer.send)(
+            self.channel_name,
+            {
+                "type": "online.friends",
+                "message": "online fiends",
+            },
+        )
 
-    # def chat_message(self, event):
-    #     self.send(json.dumps(event))
+    def chat_message(self, event):
+        self.send(json.dumps(event))
 
     def user_online_status_updated(self, is_online=True):
+        """notify all friends when someone is on online or offline."""
         friends = (
             ExtendUser.objects.prefetch_related(
                 "friends",
@@ -58,7 +58,6 @@ class ChatConsumer(WebsocketConsumer):
             )
             .values("id", "channel_name", "username")
         )
-
         remarks = "new friend online" if is_online else "friend offline."
         for friend in friends:
             async_to_sync(self.channel_layer.send)(
@@ -73,30 +72,4 @@ class ChatConsumer(WebsocketConsumer):
     def notify_friend(self, event):
         self.send(
             json.dumps(event),
-        )
-
-    def online_friends(self, event):
-        online_active_friends = (
-            Friends.objects.filter(
-                person__username=self.scope["user"].username,
-                friend__is_online=True,
-            )
-            .select_related("friend")
-            .values(
-                "id",
-                "friend__username",
-                "friend__channel_name",
-                "friend__first_name",
-                "friend__last_name",
-            )
-        )
-
-        # print("online_active_friends", online_active_friends)
-        self.send(
-            json.dumps(
-                {
-                    "friends": list(online_active_friends),
-                    "message": event.get("message"),
-                },
-            ),
         )

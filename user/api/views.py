@@ -18,6 +18,7 @@ class OnlineUserList(ListAPIView):
         IsAuthenticated,
     ]
     serializer_class = ExtendUserModelSerializer
+
     queryset = ExtendUser.objects.filter(
         is_online=True,
     ).values(
@@ -25,3 +26,13 @@ class OnlineUserList(ListAPIView):
         "username",
         "channel_name",
     )
+
+    def get_queryset(self):
+        query_set = (
+            super()
+            .get_queryset()
+            .filter(
+                friends__person__username=self.request.user.username,
+            )
+        )
+        return query_set
