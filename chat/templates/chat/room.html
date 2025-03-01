@@ -46,10 +46,23 @@
         document.querySelector('#chat-message-submit').onclick = function(e) {
             const messageInputDom = document.querySelector('#chat-message-input');
             const message = messageInputDom.value;
-            chatSocket.send(JSON.stringify({
-                'message': message,
-                'type': 'online_friends',
-            }));
+            data = {
+                "type": "notify.friend",
+                "remarks": "ONLINE",
+                "friend": {
+                    "channel_name": "specific..inmemory!oXcWCUBsCtxM",
+                    "email": "admin@gmail.com",
+                    "first_name": "Partho",
+                    "id": 1,
+                    "is_online": true,
+                    "last_name": "Debnath",
+                    "my_group_name": "1-admin",
+                    "username": "admin",
+                }
+            }
+            chatSocket.send(JSON.stringify(
+                data
+            ));
             messageInputDom.value = '';
         };
 

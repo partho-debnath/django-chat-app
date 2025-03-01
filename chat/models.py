@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models.functions import Concat
 
 
 class ExtendUser(AbstractUser):
@@ -9,12 +10,31 @@ class ExtendUser(AbstractUser):
         blank=True,
         null=True,
     )
+    my_group_name = models.GeneratedField(
+        expression=Concat(
+            "id",
+            models.Value("-"),
+            "username",
+        ),
+        output_field=models.CharField(
+            max_length=100,
+            blank=True,
+            null=True,
+        ),
+        db_persist=True,
+    )
 
     def __str__(self):
         return f"{self.email} -> {self.channel_name}"
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["id"]),
+            models.Index(fields=["username"]),
+        ]
 
-class Friends(models.Model):
+
+class Friendship(models.Model):
     person = models.ForeignKey(
         to=ExtendUser,
         on_delete=models.CASCADE,
@@ -25,3 +45,18 @@ class Friends(models.Model):
         on_delete=models.CASCADE,
         related_name="friends",
     )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["person"]),
+            models.Index(fields=["friend"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "person",
+                    "friend",
+                ],
+                name="person_friend",
+            ),
+        ]
