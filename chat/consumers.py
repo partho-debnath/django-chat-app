@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 from .models import ExtendUser
 
 
-class ChatConsumer(WebsocketConsumer):
+class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
 
     def connect(self):
         self.user = self.set_and_get_online_status(
@@ -101,13 +101,6 @@ class ChatConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_discard)(
                 online_friend.get("my_group_name"), self.channel_name
             )
-
-    def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        print(text_data_json)
-
-    def chat_message(self, event):
-        self.send(json.dumps(event))
 
     def notify_friends_on_status_change(self, is_online=True):
         """notify all friends when a user comes online or goes offline."""
