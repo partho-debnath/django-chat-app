@@ -1,7 +1,10 @@
 import json
 
-from channels.generic.websocket import WebsocketConsumer
-from asgiref.sync import async_to_sync
+from channels.generic.websocket import (
+    WebsocketConsumer,
+    AsyncJsonWebsocketConsumer,
+)
+from asgiref.sync import async_to_sync, sync_to_async
 
 from .models import ExtendUser
 
@@ -122,3 +125,13 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
         self.send(
             json.dumps(event),
         )
+
+
+class ChatServerAsyncJsonConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope.get("user")
+        print("=========", self.user)
+        await super().connect()
+
+    async def disconnect(self, code):
+        await self.close(code)
