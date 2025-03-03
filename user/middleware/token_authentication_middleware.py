@@ -15,21 +15,13 @@ class TokenAuthenticationMiddleware(BaseMiddleware):
             if header == b"authorization":
                 # extract token part
                 self.token = value.decode("utf-8").split(" ")[1]
+                break
         if self.token:
-            user = await self.get_user(token=self.token)
-            if user:
-                scope["user"] = user
-            else:
-                scope["user"] = AnonymousUser()
-                await send(
-                    {
-                        "type": "websocket.close",
-                        "code": 4000,
-                    }
-                )
-                return
+            scope["user"] = await self.get_user(token=self.token)
         else:
             scope["user"] = AnonymousUser()
+
+        if isinstance(scope["user"], AnonymousUser):
             await send(
                 {
                     "type": "websocket.close",
@@ -46,4 +38,4 @@ class TokenAuthenticationMiddleware(BaseMiddleware):
             ).aget(key=token)
             return token_obj.user
         except Token.DoesNotExist:
-            return None
+            return AnonymousUser()
