@@ -5,8 +5,8 @@ from channels.generic.websocket import (
     AsyncJsonWebsocketConsumer,
 )
 from asgiref.sync import async_to_sync
-
-from .models import ExtendUser
+from channels.db import database_sync_to_async
+from .models import ExtendUser, Messages
 
 
 class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
@@ -18,6 +18,8 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
         self.add_active_friends_and_join_groups(
             self.user.get("my_group_name"),
         )
+        print(self.user)
+        print(self.channel_name)
         self.notify_friends_on_status_change()
         self.accept()
 
@@ -55,6 +57,29 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
             "my_group_name",
         ).first()
         return user
+
+    def receive(self, text_data=None, bytes_data=None):
+        json_data = json.loads(text_data)
+        sender_id = self.user.get("id")
+        receiver_id = json_data.pop("receiver_id")
+        _ = Messages.objects.create(
+            sender_id=sender_id,
+            receiver_id=receiver_id,
+            content=json_data.get("text"),
+        )
+        receiver_channel_name = json_data.get("receiver_channel_name")
+        async_to_sync(self.channel_layer.send)(
+            receiver_channel_name,
+            {
+                "type": "send.message",
+                "message": json_data.pop("text"),
+                **json_data,
+            },
+        )
+
+    def send_message(self, event):
+        event.pop("type", None)
+        self.send(text_data=json.dumps(event))
 
     def get_online_active_friends(self):
         """
@@ -130,8 +155,31 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
 class ChatServerAsyncJsonConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.user = self.scope.get("user")
-        print("=========", self.user)
         await super().connect()
 
     async def disconnect(self, code):
         await self.close(code)
+
+    async def abc(self):
+        pass
+
+    async def get_online_active_friends(self):
+        """
+        returns the online active friends.
+        """
+
+        def get_online_friends():
+            return list(  # convert to list to force evaluation.
+                ExtendUser.objects.prefetch_related(
+                    "friends",
+                )
+                .filter(
+                    friends__person__username=self.user.username,
+                    friends__friend__is_online=True,
+                    # friends__friend__channel_name__isnull=False,
+                )
+                .values("id", "channel_name", "username")
+            )
+
+        friends = await database_sync_to_async(get_online_friends)()
+        return friends
