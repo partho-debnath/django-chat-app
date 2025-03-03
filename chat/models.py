@@ -60,3 +60,25 @@ class Friendship(models.Model):
                 name="person_friend",
             ),
         ]
+
+
+class Messages(models.Model):
+    sender = models.ForeignKey(
+        to=ExtendUser,
+        on_delete=models.CASCADE,
+        related_name="send_messages",
+    )
+    receiver = models.ForeignKey(
+        to=ExtendUser,
+        on_delete=models.CASCADE,
+        related_name="receive_messages",
+    )
+    content = models.TextField()
+    is_delivered = models.BooleanField(db_default=False)
+    is_seen_by_receiver = models.BooleanField(db_default=False)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )

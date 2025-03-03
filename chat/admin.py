@@ -1,7 +1,11 @@
 from django.contrib import admin
 
 
-from .models import ExtendUser, Friendship
+from .models import (
+    ExtendUser,
+    Friendship,
+    Messages,
+)
 
 
 @admin.register(ExtendUser)
@@ -21,4 +25,18 @@ class FriendsModelAdmin(admin.ModelAdmin):
     list_display = [
         "person",
         "friend",
+    ]
+
+
+@admin.register(Messages)
+class MessagesModelAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "sender",
+        "receiver",
+        "content",
+        "is_delivered",
+        "is_seen_by_receiver",
+        "created_at",
+        "updated_at",
     ]
