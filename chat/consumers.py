@@ -56,25 +56,25 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
 
     def receive(self, text_data=None, bytes_data=None):
         json_data = json.loads(text_data)
-        sender_id = self.user.get("id")
-        receiver_id = json_data.pop("receiver_id")
-        _ = Messages.objects.create(
-            sender_id=sender_id,
-            receiver_id=receiver_id,
-            content=json_data.get("text"),
-        )
-        receiver_channel_name = json_data.get("receiver_channel_name")
-        async_to_sync(self.channel_layer.send)(
-            receiver_channel_name,
-            {
-                "type": "send.message",
-                "message": json_data.pop("text"),
-                **json_data,
-            },
-        )
+        if json_data.get("type") == "send.message":
+            _ = Messages.objects.create(
+                sender_id=self.user.get("id"),
+                receiver_id=json_data.get("receiver_id"),
+                content=json_data.get("text"),
+            )
+            per_to_pear_group_name = json_data.get("per_to_pear_group_name")
+            async_to_sync(self.channel_layer.group_send)(
+                per_to_pear_group_name,
+                {
+                    "type": "send.message",
+                    "message": json_data.pop("text"),
+                    **json_data,
+                },
+            )
+        elif json_data.get("type") == "send.notification":
+            pass
 
     def send_message(self, event):
-        event.pop("type", None)
         self.send(text_data=json.dumps(event))
 
     def get_online_active_friends(self):
