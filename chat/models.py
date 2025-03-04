@@ -23,6 +23,11 @@ class ExtendUser(AbstractUser):
         ),
         db_persist=True,
     )
+    image = models.ImageField(
+        upload_to="profile_pictures",
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return f"{self.email} -> {self.channel_name}"

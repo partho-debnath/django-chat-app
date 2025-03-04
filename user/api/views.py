@@ -1,3 +1,5 @@
+from django.db.models import F
+from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 
@@ -19,12 +21,22 @@ class OnlineUserList(ListAPIView):
     ]
     serializer_class = ExtendUserModelSerializer
 
-    queryset = ExtendUser.objects.filter(
-        is_online=True,
-    ).values(
-        "id",
-        "username",
-        "channel_name",
+    queryset = (
+        ExtendUser.objects.filter(
+            is_online=True,
+        )
+        .prefetch_related(
+            "friends__group",
+        )
+        .annotate(
+            pear_to_pear_group=F("friends__group__name"),
+        )
+        .only(
+            "id",
+            "username",
+            "channel_name",
+            "image",
+        )
     )
 
     def get_queryset(self):
