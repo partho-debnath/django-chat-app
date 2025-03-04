@@ -5,6 +5,7 @@ from .models import (
     ExtendUser,
     Friendship,
     Messages,
+    Groups,
 )
 
 
@@ -37,6 +38,16 @@ class MessagesModelAdmin(admin.ModelAdmin):
         "content",
         "is_delivered",
         "is_seen_by_receiver",
+        "created_at",
+        "updated_at",
+    ]
+
+
+@admin.register(Groups)
+class GroupsModelAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "name",
         "created_at",
         "updated_at",
     ]
