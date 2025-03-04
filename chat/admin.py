@@ -24,6 +24,8 @@ class ExtendUserModelAdmin(admin.ModelAdmin):
 @admin.register(Friendship)
 class FriendsModelAdmin(admin.ModelAdmin):
     list_display = [
+        "id",
+        "group__name",
         "person",
         "friend",
     ]

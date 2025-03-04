@@ -1,25 +1,21 @@
 import json
-
+from django.db.models import F
 from channels.generic.websocket import (
     WebsocketConsumer,
-    AsyncJsonWebsocketConsumer,
 )
 from asgiref.sync import async_to_sync
-from channels.db import database_sync_to_async
 from .models import ExtendUser, Messages
 
 
 class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
 
     def connect(self):
-        self.user = self.set_and_get_online_status(
+        self.user = self.set_online_status_and_get_user(
             username=self.scope["user"].username,
         )
         self.add_active_friends_and_join_groups(
             self.user.get("my_group_name"),
         )
-        print(self.user)
-        print(self.channel_name)
         self.notify_friends_on_status_change()
         self.accept()
 
@@ -28,13 +24,13 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
         self.remove_active_friends_and_exit_groups(
             group_name=self.user.get("my_group_name"),
         )
-        self.set_and_get_online_status(
+        self.set_online_status_and_get_user(
             username=self.scope["user"].username,
             is_online=False,
         )
         self.close(close_code)
 
-    def set_and_get_online_status(self, username, is_online=True):
+    def set_online_status_and_get_user(self, username, is_online=True):
         """
         update the 'channel_name' and 'is_online' status based on
         whether the user is online or offline, and return the user.
@@ -86,15 +82,24 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
         returns the online active friends.
         """
         friends = (
-            ExtendUser.objects.prefetch_related(
-                "friends",
-            )
-            .filter(
+            ExtendUser.objects.filter(
                 friends__person__username=self.user.get("username"),
                 friends__friend__is_online=True,
                 # friends__friend__channel_name__isnull=False,
             )
-            .values("id", "channel_name", "username", "my_group_name")
+            .prefetch_related(
+                "friends__group",
+            )
+            .annotate(
+                pear_to_pear_group=F("friends__group__name"),
+            )
+            .values(
+                "id",
+                "channel_name",
+                "username",
+                "my_group_name",
+                "pear_to_pear_group",
+            )
         )
         return friends
 
@@ -107,13 +112,27 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
         yourself to all online active friends' groups.
         """
         online_friends = self.get_online_active_friends()
-
         for online_friend in online_friends:
+            """
+            online active friend added in my group,
+            to broadcast online/offline status.
+            """
             async_to_sync(self.channel_layer.group_add)(
                 group_name, online_friend.get("channel_name")
             )
+            """
+            add myself, to my online active friend group,
+            to broadcast online/offline status.
+            """
             async_to_sync(self.channel_layer.group_add)(
                 online_friend.get("my_group_name"), self.channel_name
+            )
+            """
+            for pear to pear message broadcast using group.
+            add myself, to my friend group (this group is the same for me and my friend.).
+            """
+            async_to_sync(self.channel_layer.group_add)(
+                online_friend.get("pear_to_pear_group"), self.channel_name
             )
 
     def remove_active_friends_and_exit_groups(self, group_name):
@@ -128,6 +147,9 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
             )
             async_to_sync(self.channel_layer.group_discard)(
                 online_friend.get("my_group_name"), self.channel_name
+            )
+            async_to_sync(self.channel_layer.group_discard)(
+                online_friend.get("pear_to_pear_group"), self.channel_name
             )
 
     def notify_friends_on_status_change(self, is_online=True):
@@ -150,36 +172,3 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
         self.send(
             json.dumps(event),
         )
-
-
-class ChatServerAsyncJsonConsumer(AsyncJsonWebsocketConsumer):
-    async def connect(self):
-        self.user = self.scope.get("user")
-        await super().connect()
-
-    async def disconnect(self, code):
-        await self.close(code)
-
-    async def abc(self):
-        pass
-
-    async def get_online_active_friends(self):
-        """
-        returns the online active friends.
-        """
-
-        def get_online_friends():
-            return list(  # convert to list to force evaluation.
-                ExtendUser.objects.prefetch_related(
-                    "friends",
-                )
-                .filter(
-                    friends__person__username=self.user.username,
-                    friends__friend__is_online=True,
-                    # friends__friend__channel_name__isnull=False,
-                )
-                .values("id", "channel_name", "username")
-            )
-
-        friends = await database_sync_to_async(get_online_friends)()
-        return friends

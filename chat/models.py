@@ -45,6 +45,11 @@ class Friendship(models.Model):
         on_delete=models.CASCADE,
         related_name="friends",
     )
+    group = models.ForeignKey(
+        to="Groups",
+        on_delete=models.RESTRICT,
+        related_name="group_name",
+    )
 
     class Meta:
         indexes = [
@@ -58,6 +63,14 @@ class Friendship(models.Model):
                     "friend",
                 ],
                 name="person_friend",
+            ),
+            models.UniqueConstraint(
+                fields=[
+                    "person",
+                    "friend",
+                    "group",
+                ],
+                name="person_friend_group",
             ),
         ]
 
@@ -107,3 +120,19 @@ class Groups(models.Model):
                 fields=["name"],
             ),
         ]
+
+
+class FriendRequest(models.Model):
+    person = models.ForeignKey(
+        to=ExtendUser,
+        on_delete=models.CASCADE,
+        related_name="received_friend_requests",
+    )
+    requested_by = models.ForeignKey(
+        to=ExtendUser,
+        on_delete=models.CASCADE,
+        related_name="sent_friend_requests",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )

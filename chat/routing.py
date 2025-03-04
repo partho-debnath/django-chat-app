@@ -8,9 +8,4 @@ websocket_urlpatterns = [
         consumers.OnlineOfflineStatusChangeConsumer.as_asgi(),
         name="chat-consumer",
     ),
-    re_path(
-        "ws/chat-server/",
-        consumers.ChatServerAsyncJsonConsumer.as_asgi(),
-        name="chat-server",
-    ),
 ]
