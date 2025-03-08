@@ -57,17 +57,19 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         json_data = json.loads(text_data)
         if json_data.get("type") == "send.message":
-            _ = Messages.objects.create(
+            message_obj = Messages.objects.create(
                 sender_id=self.user.get("id"),
                 receiver_id=json_data.get("receiver_id"),
                 content=json_data.get("text"),
             )
+
             per_to_pear_group_name = json_data.get("per_to_pear_group_name")
             async_to_sync(self.channel_layer.group_send)(
                 per_to_pear_group_name,
                 {
                     "type": "send.message",
                     "message": json_data.pop("text"),
+                    "message_id": message_obj.id,
                     **json_data,
                 },
             )
@@ -129,7 +131,8 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
             )
             """
             for pear to pear message broadcast using group.
-            add myself, to my friend group (this group is the same for me and my friend.).
+            add myself, to my friend group (this group is
+            the same for me and my friend.).
             """
             async_to_sync(self.channel_layer.group_add)(
                 online_friend.get("pear_to_pear_group"), self.channel_name
