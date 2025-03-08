@@ -60,6 +60,7 @@ class Friendship(models.Model):
         indexes = [
             models.Index(fields=["person"]),
             models.Index(fields=["friend"]),
+            models.Index(fields=["group"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -85,11 +86,13 @@ class Messages(models.Model):
         to=ExtendUser,
         on_delete=models.CASCADE,
         related_name="send_messages",
+        db_index=True,
     )
     receiver = models.ForeignKey(
         to=ExtendUser,
         on_delete=models.CASCADE,
         related_name="receive_messages",
+        db_index=True,
     )
     content = models.TextField()
     is_delivered = models.BooleanField(db_default=False)
