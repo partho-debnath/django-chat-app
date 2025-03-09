@@ -6,6 +6,7 @@ from .models import (
     Friendship,
     Messages,
     Groups,
+    File,
 )
 
 
@@ -52,4 +53,12 @@ class GroupsModelAdmin(admin.ModelAdmin):
         "name",
         "created_at",
         "updated_at",
+    ]
+
+
+@admin.register(File)
+class FileModelAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "file",
     ]
