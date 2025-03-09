@@ -94,7 +94,10 @@ class Messages(models.Model):
         related_name="receive_messages",
         db_index=True,
     )
-    content = models.TextField()
+    message = models.TextField(
+        blank=True,
+        null=True,
+    )
     files = models.ManyToManyField(
         to="File",
         blank=True,

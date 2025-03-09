@@ -37,7 +37,7 @@ class MessagesModelAdmin(admin.ModelAdmin):
         "id",
         "sender",
         "receiver",
-        "content",
+        "message",
         "is_delivered",
         "is_seen_by_receiver",
         "created_at",
