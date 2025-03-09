@@ -160,5 +160,5 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Real time chat application",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    # OTHER SETTINGS
+    "COMPONENT_SPLIT_REQUEST": True,
 }

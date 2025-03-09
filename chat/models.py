@@ -100,9 +100,8 @@ class Messages(models.Model):
     )
     files = models.ManyToManyField(
         to="File",
-        blank=True,
-        null=True,
         related_name="message",
+        blank=True,
     )
     is_delivered = models.BooleanField(db_default=False)
     is_seen_by_receiver = models.BooleanField(db_default=False)
