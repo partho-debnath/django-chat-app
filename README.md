@@ -7,6 +7,14 @@
 
 ## Setup process 
 
+Clone The Project
+
+    git clone https://github.com/partho-debnath/django-chat-app.git
+
+Navigate to the project directory
+
+    cd django-chat-app
+
 Create virtual environment
 
     python3 -m venv <environment_name>
@@ -15,7 +23,7 @@ Activate virtual environment
 
     source <environment_name>/bin/activate
 
-(<environment_name>) path/to/project/
+(<environment_name>) path/to/django-chat-app
 
 Install project dependencies
 
