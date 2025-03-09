@@ -57,38 +57,42 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         json_data = json.loads(text_data)
         if json_data.get("type") == "send.new.message":
+            text_message = json_data.pop("text", None)
+            sender_id = self.user.get("id")
             message_obj = Messages.objects.create(
-                sender_id=self.user.get("id"),
+                sender_id=sender_id,
                 receiver_id=json_data.get("receiver_id"),
-                content=json_data.get("text"),
+                message=text_message,
             )
 
             per_to_pear_group_name = json_data.get("per_to_pear_group_name")
             async_to_sync(self.channel_layer.group_send)(
                 per_to_pear_group_name,
                 {
-                    "type": "send.new.message",
-                    "message": json_data.pop("text"),
+                    "message": text_message,
                     "message_id": message_obj.id,
+                    "sender_id": sender_id,
                     **json_data,
                 },
             )
         elif json_data.get("type") == "send.update.message":
+            text_message = json_data.pop("text", None)
+            sender_id = self.user.get("id")
             message_obj = Messages.objects.get(
                 id=json_data.get("message_id"),
-                sender_id=self.user.get("id"),
+                sender_id=sender_id,
                 receiver_id=json_data.get("receiver_id"),
             )
 
-            message_obj.content = json_data.get("text")
+            message_obj.content = text_message
             message_obj.save()
             per_to_pear_group_name = json_data.get("per_to_pear_group_name")
             async_to_sync(self.channel_layer.group_send)(
                 per_to_pear_group_name,
                 {
-                    "type": "send.update.message",
-                    "message": json_data.pop("text"),
+                    "message": text_message,
                     "message_id": message_obj.id,
+                    "sender_id": sender_id,
                     **json_data,
                 },
             )
