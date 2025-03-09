@@ -95,6 +95,12 @@ class Messages(models.Model):
         db_index=True,
     )
     content = models.TextField()
+    files = models.ManyToManyField(
+        to="File",
+        blank=True,
+        null=True,
+        related_name="message",
+    )
     is_delivered = models.BooleanField(db_default=False)
     is_seen_by_receiver = models.BooleanField(db_default=False)
     created_at = models.DateTimeField(
@@ -102,6 +108,12 @@ class Messages(models.Model):
     )
     updated_at = models.DateTimeField(
         auto_now=True,
+    )
+
+
+class File(models.Model):
+    file = models.FileField(
+        upload_to="files",
     )
 
 

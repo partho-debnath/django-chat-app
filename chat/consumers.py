@@ -56,7 +56,7 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
 
     def receive(self, text_data=None, bytes_data=None):
         json_data = json.loads(text_data)
-        if json_data.get("type") == "send.message":
+        if json_data.get("type") == "send.new.message":
             message_obj = Messages.objects.create(
                 sender_id=self.user.get("id"),
                 receiver_id=json_data.get("receiver_id"),
@@ -67,16 +67,33 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(
                 per_to_pear_group_name,
                 {
-                    "type": "send.message",
+                    "type": "send.new.message",
                     "message": json_data.pop("text"),
                     "message_id": message_obj.id,
                     **json_data,
                 },
             )
-        elif json_data.get("type") == "send.notification":
-            pass
+        elif json_data.get("type") == "send.update.message":
+            message_obj = Messages.objects.get(
+                id=json_data.get("message_id"),
+                sender_id=self.user.get("id"),
+                receiver_id=json_data.get("receiver_id"),
+            )
 
-    def send_message(self, event):
+            message_obj.content = json_data.get("text")
+            message_obj.save()
+            per_to_pear_group_name = json_data.get("per_to_pear_group_name")
+            async_to_sync(self.channel_layer.group_send)(
+                per_to_pear_group_name,
+                {
+                    "type": "send.update.message",
+                    "message": json_data.pop("text"),
+                    "message_id": message_obj.id,
+                    **json_data,
+                },
+            )
+
+    def send_new_message(self, event):
         self.send(text_data=json.dumps(event))
 
     def get_online_active_friends(self):
