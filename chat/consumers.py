@@ -75,6 +75,10 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
                     **json_data,
                 },
             )
+            self.message_delivered_acknowledgement(message_obj.id)
+            message_obj.is_delivered = True
+            message_obj.save()
+
         elif json_data.get("type") == "send.update.message":
             text_message = json_data.pop("text", None)
             sender_id = self.user.get("id")
@@ -99,6 +103,20 @@ class OnlineOfflineStatusChangeConsumer(WebsocketConsumer):
 
     def send_new_message(self, event):
         self.send(text_data=json.dumps(event))
+
+    def send_update_message(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def message_delivered_acknowledgement(self, message_id):
+        self.send(
+            text_data=json.dumps(
+                {
+                    "type": "message.acknowledgement",
+                    "message_id": message_id,
+                    "status": "DELIVERED",
+                }
+            ),
+        )
 
     def get_online_active_friends(self):
         """
