@@ -112,6 +112,16 @@ class Messages(models.Model):
         auto_now=True,
     )
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=~models.Q(sender=models.F("receiver")),
+                name="unique_sender_receiver",
+                violation_error_message="""Message, sender and
+                receiver can not be same.""",
+            )
+        ]
+
 
 class File(models.Model):
     file = models.FileField(
